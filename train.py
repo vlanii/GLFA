@@ -20,7 +20,7 @@ os.environ['CUDA_VISIBLE_DEVICES']='0'
 import net as net
 from sampler import InfiniteSamplerWrapper
 
-cudnn.benchmark = True   # 加�?Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
+cudnn.benchmark = True   # 加�?Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -32,18 +32,18 @@ def train_transform():
     ]
     return transforms.Compose(transform_list)
 
-def style_transfer(vgg, decoder, SCT, content, style, alpha=1.0):
+def style_transfer(vgg, decoder, LCT, content, style, alpha=1.0):
     assert (0.0 <= alpha <= 1.0)
     content_f = vgg(content)
     style_f = vgg(style)
-    feat = SCT(content_f, style_f)
+    feat = LCT(content_f, style_f)
     return decoder(feat)
-def sample_image(vgg, decoder, SCT, content_images, style_images, output_file, iter):
+def sample_image(vgg, decoder, LCT, content_images, style_images, output_file, iter):
     batch_size = content_images.shape[0]
     decoder.eval()
-    SCT.eval()
+    LCT.eval()
 
-    temp_img = style_transfer(vgg, decoder, SCT, content_images, style_images, alpha=1.0)
+    temp_img = style_transfer(vgg, decoder, LCT, content_images, style_images, alpha=1.0)
 
     cont = make_grid(content_images, nrow=batch_size, normalize=True)
     style = make_grid(style_images, nrow=batch_size, normalize=True)
@@ -52,7 +52,7 @@ def sample_image(vgg, decoder, SCT, content_images, style_images, output_file, i
 
     save_image(image_grid, output_file + 'output'+str(iter)+'.jpg', normalize=False)
     decoder.train()
-    SCT.train()
+    LCT.train()
     return
 
 
@@ -122,7 +122,7 @@ def train(args):
         sampler=InfiniteSamplerWrapper(style_dataset),
         num_workers=args.n_threads))
 
-    optimizer = torch.optim.Adam(itertools.chain(network.module.decoder.parameters(), network.module.SCT.parameters(), network.module.mlp.parameters()), lr=args.lr)
+    optimizer = torch.optim.Adam(itertools.chain(network.module.decoder.parameters(), network.module.LCT.parameters(), network.module.mlp.parameters()), lr=args.lr)
     
 
     for i in tqdm(range(args.max_iter)):
@@ -155,15 +155,15 @@ def train(args):
             torch.save(state_dict, save_dir /
                        'decoder_iter_{:d}.pth.tar'.format(i + 1))
             #save temp image
-            sample_image(vgg, decoder, network.module.SCT, content_images, style_images, output_file=output_file_name,
+            sample_image(vgg, decoder, network.module.LCT, content_images, style_images, output_file=output_file_name,
                          iter=i + 1)
 
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-            state_dict = network.module.SCT.state_dict()
+            state_dict = network.module.LCT.state_dict()
             for key in state_dict.keys():
                 state_dict[key] = state_dict[key].to(torch.device('cpu'))
             torch.save(state_dict, save_dir /
-                       'sct_iter_{:d}.pth.tar'.format(i + 1))
+                       'lct_iter_{:d}.pth.tar'.format(i + 1))
 
 
     writer.close()

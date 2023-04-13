@@ -27,7 +27,7 @@ def test_transform(size, crop):
     return transform
 
 
-def style_transfer(vgg, decoder, SCT, content, style, alpha=1.0,
+def style_transfer(vgg, decoder, LCT, content, style, alpha=1.0,
                    interpolation_weights=None):
     assert (0.0 <= alpha <= 1.0)
     content_f = vgg(content)
@@ -35,12 +35,12 @@ def style_transfer(vgg, decoder, SCT, content, style, alpha=1.0,
     if interpolation_weights:
         _, C, H, W = content_f.size()
         feat = torch.FloatTensor(1, C, H, W).zero_().to(device)
-        base_feat = SCT(content_f, style_f)
+        base_feat = LCT(content_f, style_f)
         for i, w in enumerate(interpolation_weights):
             feat = feat + w * base_feat[i:i + 1]
         content_f = content_f[0:1]
     else:
-        feat = SCT(content_f, style_f)
+        feat = LCT(content_f, style_f)
     return decoder(feat)
 
 
@@ -77,9 +77,9 @@ def pytest(args):
     decoder = net.decoder
     vgg = net.vgg
     network = net.Net(vgg, decoder, args.testing_mode)
-    SCT = network.SCT
+    LCT = network.LCT
 
-    SCT.eval()
+    LCT.eval()
     decoder.eval()
     vgg.eval()
 
@@ -104,19 +104,19 @@ def pytest(args):
     vgg.load_state_dict(new_state_dict)
 
     new_state_dict = OrderedDict()
-    load_SCT = torch.load(args.SCT)
-    for k, v in load_SCT.items():
+    load_LCT = torch.load(args.LCT)
+    for k, v in load_LCT.items():
         # namekey = k[7:] # remove `module.`
         namekey = k
         new_state_dict[namekey] = v
-    SCT.load_state_dict(new_state_dict)
+    LCT.load_state_dict(new_state_dict)
 
     vgg = nn.Sequential(*list(vgg.children())[:18])
     decoder = nn.Sequential(*list(net.decoder.children())[10:])
 
     vgg.to(device)
     decoder.to(device)
-    SCT.to(device)
+    LCT.to(device)
 
     content_tf = test_transform(args.content_size, args.crop)
     style_tf = test_transform(args.style_size, args.crop)
@@ -129,7 +129,7 @@ def pytest(args):
             style = style.to(device)
             content = content.to(device)
             with torch.no_grad():
-                output = style_transfer(vgg, decoder, SCT, content, style,
+                output = style_transfer(vgg, decoder, LCT, content, style,
                                         args.alpha, interpolation_weights)
             output = output.cpu()
             output_name = output_dir / '{:s}_interpolation{:s}'.format(
@@ -146,7 +146,7 @@ def pytest(args):
                 style = style.to(device).unsqueeze(0)
                 content = content.to(device).unsqueeze(0)
                 with torch.no_grad():
-                    output = style_transfer(vgg, decoder, SCT, content, style,
+                    output = style_transfer(vgg, decoder, LCT, content, style,
                                             args.alpha)
                 output = output.cpu()
 
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                         help='Directory path to a batch of style images')
     parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
     parser.add_argument('--decoder', type=str, default='')
-    parser.add_argument('--SCT', type=str, default='')
+    parser.add_argument('--LCT', type=str, default='')
 
     # Additional options
     parser.add_argument('--content_size', type=int, default=512,

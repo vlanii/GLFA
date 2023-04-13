@@ -108,9 +108,9 @@ mlp = nn.ModuleList([nn.Linear(64, 64),
                     nn.ReLU(),
                     nn.Linear(512, 128)]) 
 
-class SCT(nn.Module):
+class LCT(nn.Module):
     def __init__(self, training_mode='art'):
-        super(SCT, self).__init__()
+        super(LCT, self).__init__()
         self.cnet = nn.Sequential(nn.Conv2d(256,128,1,1,0),nn.ReLU(inplace=True),nn.Conv2d(128,32,1,1,0))
         self.snet = nn.Sequential(nn.Conv2d(256,128,3,1,0),nn.ReLU(inplace=True),nn.Conv2d(128,32,1,1,0))
         self.uncompress = nn.Conv2d(32,256,1,1,0)
@@ -284,7 +284,7 @@ class Net(nn.Module):
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
         self.decoder = decoder
-        self.SCT = SCT(training_mode)
+        self.LCT = LCT(training_mode)
         self.mlp = mlp if training_mode == 'art' else mlp[:9]
         
         self.CCPL = CCPL(self.mlp)
@@ -335,7 +335,7 @@ class Net(nn.Module):
         style_feats = self.encode_with_intermediate(style)
         content_feats = self.encode_with_intermediate(content)
 
-        gF = self.SCT(content_feats[-1], style_feats[-1])
+        gF = self.LCT(content_feats[-1], style_feats[-1])
 
         gimage = self.decoder(gF)
         g_t_feats = self.encode_with_intermediate(gimage)
