@@ -7,6 +7,7 @@ import random
 from moNCE_sinkhorn import OT
 from packaging import version
 
+
 decoder = nn.Sequential(
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(512, 256, (3, 3)),

@@ -15,7 +15,7 @@ from torchvision.utils import save_image
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ['CUDA_VISIBLE_DEVICES']='0'
+os.environ['CUDA_VISIBLE_DEVICES']='1'
 
 import net as net
 from sampler import InfiniteSamplerWrapper
@@ -31,6 +31,7 @@ def train_transform():
         transforms.ToTensor()
     ]
     return transforms.Compose(transform_list)
+
 
 def style_transfer(vgg, decoder, LCT, content, style, alpha=1.0):
     assert (0.0 <= alpha <= 1.0)
@@ -194,7 +195,7 @@ if __name__ == '__main__':
     parser.add_argument('--content_weight', type=float, default=1.0)
     parser.add_argument('--ccp_weight', type=float, default=5.0)
     parser.add_argument('--n_threads', type=int, default=8)
-    parser.add_argument('--save_model_interval', type=int, default=10000)
+    parser.add_argument('--save_model_interval', type=int, default=1000)
     parser.add_argument('--tau', type=float, default=0.07)
     parser.add_argument('--num_s', type=int, default=8, help='number of sampled anchor vectors')
     parser.add_argument('--num_l', type=int, default=3, help='number of layers to calculate CCPL')

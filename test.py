@@ -26,7 +26,6 @@ def test_transform(size, crop):
     transform = transforms.Compose(transform_list)
     return transform
 
-
 def style_transfer(vgg, decoder, LCT, content, style, alpha=1.0,
                    interpolation_weights=None):
     assert (0.0 <= alpha <= 1.0)

@@ -2,7 +2,6 @@
 from packaging import version
 import torch
 
-
 def sinkhorn(dot, max_iter=100):
     """
     dot: n x in_size x out_size
