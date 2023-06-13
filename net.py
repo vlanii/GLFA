@@ -109,6 +109,7 @@ mlp = nn.ModuleList([nn.Linear(64, 64),
                     nn.ReLU(),
                     nn.Linear(512, 128)]) 
 
+# This module is implemented on the basis of CCPL: https://github.com/JarrentWu1031/CCPL/tree/main
 class LCT(nn.Module):
     def __init__(self, training_mode='art'):
         super(LCT, self).__init__()
@@ -153,6 +154,8 @@ class Normalize(nn.Module):
         out = x.div(norm + 1e-7)
         return out
 
+# This module is implemented on the basis of CCPL: https://github.com/JarrentWu1031/CCPL/tree/main
+# and MoNCE: https://github.com/fnzhan/MoNCE
 class CCPL(nn.Module):
     def __init__(self, mlp):
         super(CCPL, self).__init__()
