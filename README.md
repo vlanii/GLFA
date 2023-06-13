@@ -22,4 +22,4 @@ The problem that needs to be solved for photorealistic style transfer lies in li
 
 ### Acknowledgments
 
-The code is based on project [CCPL](https://github.com/JarrentWu1031/CCPL) and [MoNCE](https://github.com/fnzhan/MoNCE). We sincerely thank them for their great work.
+The Weighted Contrast Estimation(WCE) loss and the Linear Covariance Transformation network is based on project [CCPL](https://github.com/JarrentWu1031/CCPL) and [MoNCE](https://github.com/fnzhan/MoNCE). We sincerely thank them for their great work.
