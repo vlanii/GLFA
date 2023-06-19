@@ -2,7 +2,7 @@
 
 The problem that needs to be solved for photorealistic style transfer lies in limiting the distortion of texture details of the generated image based on the typical style transfer network. Although the existing methods achieve better stylization results, they lack sufficient style information because they do not consider the feature map comprehensively enough, leading to exposure or artifacts. This article proposes a loss function based on the contrast learning method to constrain the network to extract local and global information effectively. It ensures the consistency of distribution among regional blocks generated based on anchor points and the consistency of comparison between anchor points of the resulting image and content image in their neighborhood. This ensures consistency between local and global information comparisons. To ensure that the network is simple and effective and that enough information is extracted, this article proposes a linear covariance transformation network to achieve faithful stylization by effectively fusing feature first-order statistics with second-order statistics. Experiments show that the proposed method can faithfully achieve realistic stylization and satisfying visual effects.
 
-## Increase the result image after replacing WCE to CCPL
+## Increase the result image after replacing WCE to CCPL in Figure 3
 
 ![images/figure_3](E:\Git\upto_git\GLFA_submit\README.assets\image-20230619205834783.png)
 
