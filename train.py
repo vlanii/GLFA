@@ -130,13 +130,13 @@ def train(args):
         content_images = next(content_iter).to(device)
         style_images = next(style_iter).to(device)
 
-        loss_c, loss_s, loss_ccp = network(content_images, style_images, args.tau, args.num_s, args.num_l)
+        loss_c, loss_s, loss_wce = network(content_images, style_images, args.tau, args.num_s, args.num_l)
 
         loss_c = args.content_weight * torch.mean(loss_c)
         loss_s = args.style_weight * torch.mean(loss_s)
-        loss_ccp = args.ccp_weight * torch.mean(loss_ccp)
+        loss_wce = args.wce_weight * torch.mean(loss_wce)
 
-        loss = loss_c + loss_s + loss_ccp
+        loss = loss_c + loss_s + loss_wce
 
 
         optimizer.zero_grad()
@@ -145,7 +145,7 @@ def train(args):
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
-        writer.add_scalar('loss_ccp', loss_ccp.item(), i + 1)
+        writer.add_scalar('loss_wce', loss_wce.item(), i + 1)
 
 
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
@@ -192,12 +192,12 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--style_weight', type=float, default=10.0)
     parser.add_argument('--content_weight', type=float, default=1.0)
-    parser.add_argument('--ccp_weight', type=float, default=5.0)
+    parser.add_argument('--wce_weight', type=float, default=5.0)
     parser.add_argument('--n_threads', type=int, default=8)
     parser.add_argument('--save_model_interval', type=int, default=1000)
     parser.add_argument('--tau', type=float, default=0.07)
     parser.add_argument('--num_s', type=int, default=8, help='number of sampled anchor vectors')
-    parser.add_argument('--num_l', type=int, default=3, help='number of layers to calculate CCPL')
+    parser.add_argument('--num_l', type=int, default=3, help='number of layers to calculate WCE')
     args = parser.parse_args()
 
     train(args)

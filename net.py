@@ -110,11 +110,14 @@ mlp = nn.ModuleList([nn.Linear(64, 64),
                     nn.Linear(512, 128)]) 
 
 # This module is implemented on the basis of CCPL: https://github.com/JarrentWu1031/CCPL/tree/main
+#   We add skip connections in CCPL's feature fusion module SCT in the form of AdaIN \
+#   to enhance the global style features of the result image \
+#   without weakening the texture of the result image
 class LCT(nn.Module):
     def __init__(self, training_mode='art'):
         super(LCT, self).__init__()
-        self.cnet = nn.Sequential(nn.Conv2d(256,128,1,1,0),nn.ReLU(inplace=True),nn.Conv2d(128,32,1,1,0))
-        self.snet = nn.Sequential(nn.Conv2d(256,128,3,1,0),nn.ReLU(inplace=True),nn.Conv2d(128,32,1,1,0))
+        self.cConv = nn.Sequential(nn.Conv2d(256,128,1,1,0),nn.ReLU(inplace=True),nn.Conv2d(128,32,1,1,0))
+        self.sConv = nn.Sequential(nn.Conv2d(256,128,3,1,0),nn.ReLU(inplace=True),nn.Conv2d(128,32,1,1,0))
         self.uncompress = nn.Conv2d(32,256,1,1,0)
 
     def adaptive_instance_normalization(self, content_feat, style_feat):
@@ -129,8 +132,8 @@ class LCT(nn.Module):
     def forward(self, content, style):
         cF_nor = nor_mean_std(content)
         sF_nor, smean = nor_mean(style)
-        cF = self.cnet(cF_nor)
-        sF = self.snet(sF_nor)
+        cF = self.cConv(cF_nor)
+        sF = self.sConv(sF_nor)
         b, c, w, h = cF.size()
         s_cov = calc_cov(sF)
         gF = torch.bmm(s_cov, cF.flatten(2, 3)).view(b,c,w,h)
@@ -156,9 +159,17 @@ class Normalize(nn.Module):
 
 # This module is implemented on the basis of CCPL: https://github.com/JarrentWu1031/CCPL/tree/main
 # and MoNCE: https://github.com/fnzhan/MoNCE
-class CCPL(nn.Module):
+#   Refer to the sampling and comparison strategies of the CCPL, \
+#       use the difference vector as a sample, \
+#       and generate the difference vectors in the same position of the result as the content as the positive sample, \
+#       and the others are negative samples.
+#   In addition, due to the different effects of each negative sample on the positive sample, \
+#       we refer to MoNCE to add adaptive weights to each negative sample;
+#   We also incorporate the sample in the KL divergence space, \
+#       so that the result is similar to the overall perception of the content image.
+class WCE(nn.Module):
     def __init__(self, mlp):
-        super(CCPL, self).__init__()
+        super(WCE, self).__init__()
         self.cross_entropy_loss = torch.nn.CrossEntropyLoss()
         self.mlp = mlp
 
@@ -177,7 +188,7 @@ class CCPL(nn.Module):
         ft = torch.ones((b,c,8*num_s)).to(feat.device) # b, c, 32 
         for i in range(num_s):
             f_c = feat[:,:,h_ids[i]+1,w_ids[i]+1].view(b,c,1) # centor
-
+            # difference vector
             f = feat[:,:,h_ids[i]:h_ids[i]+3,w_ids[i]:w_ids[i]+3].flatten(2, 3) - f_c
 
             ft[:,:,8*i:8*i+8] = torch.cat([f[:,:,:4], f[:,:,5:]], 2)
@@ -270,14 +281,14 @@ class CCPL(nn.Module):
         return divergence
 
     def forward(self, feats_q, feats_k, num_s, start_layer, end_layer, tau=0.07):
-        loss_ccp = 0.0
+        loss_wce = 0.0
         for i in range(start_layer, end_layer):
             f_q, sample_ids, f_q_nine = self.NeighborSample(feats_q[i], i, num_s)
             f_k, _, f_k_nine = self.NeighborSample(feats_k[i], i, num_s, sample_ids)
-            loss_ccp += self.MoNCELoss(f_q, f_k, tau)
+            loss_wce += self.MoNCELoss(f_q, f_k, tau)
             kl_divergence = self.kl_divergence(f_q_nine, f_k_nine)
-            loss_ccp += kl_divergence
-        return loss_ccp    
+            loss_wce += kl_divergence
+        return loss_wce
 
 class Net(nn.Module):
     def __init__(self, encoder, decoder, training_mode='art'):
@@ -291,7 +302,7 @@ class Net(nn.Module):
         self.LCT = LCT(training_mode)
         self.mlp = mlp if training_mode == 'art' else mlp[:9]
         
-        self.CCPL = CCPL(self.mlp)
+        self.WCE = WCE(self.mlp)
         self.mse_loss = nn.MSELoss()
         self.end_layer = 4 if training_mode == 'art' else 3
         self.mode = training_mode
@@ -351,6 +362,6 @@ class Net(nn.Module):
             loss_s += self.calc_style_loss(g_t_feats[i], style_feats[i]) 
 
         start_layer = end_layer - num_layer
-        loss_ccp = self.CCPL(g_t_feats, content_feats, num_s, start_layer, end_layer)
+        loss_wce = self.WCE(g_t_feats, content_feats, num_s, start_layer, end_layer)
 
-        return loss_c, loss_s, loss_ccp
+        return loss_c, loss_s, loss_wce
