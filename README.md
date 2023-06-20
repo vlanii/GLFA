@@ -4,7 +4,7 @@ The problem that needs to be solved for photorealistic style transfer lies in li
 
 ## Increase the result image after replacing WCE to CCPL in Figure 3
 
-![images/figure_3](./README.assets/figure_3.jpg)
+![images/figure_3](./images/figure_3.jpg)
 
 Since each negative sample has a different influence on the positive sample, we can make a better comparison if we weight each negative sample according to its correlation with the positive sample.
 
@@ -12,7 +12,7 @@ In the comparison of the second column and the last column, we replaced WCE to C
 
 ## Change “without skip” in Figure 4 to SCT
 
-![images/figure_4](./README.assets/figure_4.jpg)
+![images/figure_4](./images/figure_4.jpg)
 
 Our LCT module is completed on the basis of SCT module in CCPL. We added skip connection, and in the absence of skip connection, the LCT module is actually the SCT module in the CCPL.
 
